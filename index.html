@@ -22,6 +22,7 @@
       padding:10px 12px;border-radius:12px;cursor:pointer
     }
     button:hover{filter:brightness(1.1)}
+    button:disabled{opacity:.55;cursor:not-allowed}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
     .card{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:14px}
     .title{font-weight:800;margin:0 0 6px;font-size:16px}
@@ -67,6 +68,8 @@
 
   <div class="wrap">
     <div id="status" class="status">Loading…</div>
+
+    <!-- Auth row gets inserted here by JS -->
 
     <!-- Post a Catch form -->
     <div class="form">
@@ -120,10 +123,10 @@
       </div>
 
       <div class="row" style="margin-top:10px">
-        <button id="postBtn">Post catch</button>
+        <button id="postBtn" disabled>Sign in to post</button>
         <button id="reloadBtn" type="button">Reload posts</button>
       </div>
-      <div class="hint">If posting fails, it’s usually Firestore Rules blocking writes.</div>
+      <div class="hint">Posting is disabled until you sign in.</div>
     </div>
 
     <!-- Feed -->
@@ -142,7 +145,15 @@
       orderBy
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    // ✅ Your Firebase config (linked to the correct Web App)
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+    // ✅ Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCndtMlIb_Y_YCP1RO-ctfizRU6q1MGeHY",
       authDomain: "bestfishingsecrets-932cf.firebaseapp.com",
@@ -155,6 +166,8 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
     const statusEl = document.getElementById("status");
     const gridEl = document.getElementById("grid");
@@ -168,6 +181,58 @@
 
     const postBtn = document.getElementById("postBtn");
     const reloadBtn = document.getElementById("reloadBtn");
+
+    // Insert Auth UI just below status box
+    const authRow = document.createElement("div");
+    authRow.className = "row";
+    authRow.innerHTML = `
+      <button id="loginBtn" type="button">Sign in with Google</button>
+      <button id="logoutBtn" type="button" style="display:none">Sign out</button>
+      <span id="userInfo" class="meta"></span>
+    `;
+    statusEl.insertAdjacentElement("afterend", authRow);
+
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const userInfo = document.getElementById("userInfo");
+
+    loginBtn.addEventListener("click", async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "❌ Sign-in failed. (If you’re on mobile, popups can be blocked — tell me and I’ll switch to redirect login.)";
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "❌ Sign-out failed.";
+      }
+    });
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+
+      if (user) {
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+        userInfo.textContent = `Signed in as ${user.displayName || user.email || "User"}`;
+        postBtn.disabled = false;
+        postBtn.textContent = "Post catch";
+      } else {
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        userInfo.textContent = "Not signed in";
+        postBtn.disabled = true;
+        postBtn.textContent = "Sign in to post";
+      }
+    });
 
     function escapeHtml(s){
       return String(s)
@@ -208,7 +273,6 @@
           const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
           snap = await getDocs(q);
         }catch(e){
-          // If createdAt doesn't exist / index not ready, fall back
           snap = await getDocs(collection(db, "posts"));
         }
 
@@ -234,6 +298,11 @@
     }
 
     async function postCatch(){
+      if (!currentUser) {
+        statusEl.textContent = "❌ Please sign in first.";
+        return;
+      }
+
       const title = titleEl.value.trim();
       const state = stateEl.value.trim();
       const priceStr = priceEl.value.trim();
@@ -256,7 +325,15 @@
           price: Number(priceStr),
           previewUrl: previewUrl || null,
           fullUrl: fullUrl || null,
-          secretLocation: secretLocation || null,  // stored but NOT displayed
+
+          // Stored but NOT displayed
+          secretLocation: secretLocation || null,
+
+          // Auth info
+          userId: currentUser.uid,
+          userName: currentUser.displayName || null,
+          userEmail: currentUser.email || null,
+
           createdAt: serverTimestamp()
         });
 
@@ -273,9 +350,10 @@
       }catch(err){
         console.error(err);
         statusEl.textContent =
-          "❌ Post failed.\n\nMost common cause: Firestore Rules blocking writes.\nNext step: add Google login + require auth for posting.";
+          "❌ Post failed.\n\nMost common causes:\n- Firestore Rules block writes\n- Auth not enabled\n\nOpen console for details.";
       }finally{
-        postBtn.disabled = false;
+        // Re-enable depending on auth state
+        postBtn.disabled = !currentUser;
       }
     }
 
