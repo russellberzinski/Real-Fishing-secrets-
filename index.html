@@ -59,7 +59,6 @@
     .danger{color:#fecaca}
     .ok{color:#bbf7d0}
 
-    /* Image styling */
     .post-img{
       width:100%;
       border-radius:14px;
@@ -82,7 +81,6 @@
 
     <!-- Auth row gets inserted here by JS -->
 
-    <!-- Post a Catch form -->
     <div class="form">
       <h2>Post a Catch</h2>
       <div class="fields">
@@ -126,11 +124,10 @@
           <input id="fullUrl" placeholder="https://..." />
         </div>
 
-        <!-- ✅ NEW: Photo upload -->
         <div class="full">
           <label for="photo">Photo (uploaded to Cloudinary)</label>
           <input id="photo" type="file" accept="image/*" />
-          <div class="img-note">Optional, but recommended. JPG/PNG/HEIC should work. Large files may take longer on mobile.</div>
+          <div class="img-note">Optional, but recommended. Large files may take longer on mobile.</div>
         </div>
 
         <div class="full">
@@ -147,7 +144,6 @@
       <div class="hint">Posting is disabled until you sign in.</div>
     </div>
 
-    <!-- Feed -->
     <div id="grid" class="grid"></div>
   </div>
 
@@ -167,16 +163,41 @@
       getAuth,
       GoogleAuthProvider,
       signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
       signOut,
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-    // ✅ Cloudinary config (NO secrets needed for unsigned upload)
+    // ====== DOM ======
+    const statusEl = document.getElementById("status");
+    const gridEl = document.getElementById("grid");
+
+    const titleEl = document.getElementById("title");
+    const stateEl = document.getElementById("state");
+    const priceEl = document.getElementById("price");
+    const previewUrlEl = document.getElementById("previewUrl");
+    const fullUrlEl = document.getElementById("fullUrl");
+    const secretLocationEl = document.getElementById("secretLocation");
+    const photoEl = document.getElementById("photo");
+
+    const postBtn = document.getElementById("postBtn");
+    const reloadBtn = document.getElementById("reloadBtn");
+
+    // ====== Always show real errors on-page (so it never “hangs”) ======
+    window.addEventListener("unhandledrejection", (e) => {
+      statusEl.textContent = "❌ Unhandled promise:\n" + (e.reason?.message || e.reason || e);
+    });
+    window.addEventListener("error", (e) => {
+      statusEl.textContent = "❌ JS error:\n" + (e.message || e);
+    });
+
+    // ====== Cloudinary (unsigned upload) ======
     const CLOUDINARY_CLOUD_NAME = "dhuakqubc";
     const CLOUDINARY_UPLOAD_PRESET = "emiktt1b";
     const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
-    // ✅ Your Firebase config
+    // ====== Firebase config ======
     const firebaseConfig = {
       apiKey: "AIzaSyCndtMlIb_Y_YCP1RO-ctfizRU6q1MGeHY",
       authDomain: "bestfishingsecrets-932cf.firebaseapp.com",
@@ -187,30 +208,257 @@
       measurementId: "G-Z8L28MXNEG"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+    // ====== Init ======
+    let app, db, auth, provider;
+    try{
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      auth = getAuth(app);
+      provider = new GoogleAuthProvider();
+    }catch(err){
+      statusEl.textContent = "❌ Firebase init failed:\n" + (err?.message || String(err));
+      throw err;
+    }
 
-    const statusEl = document.getElementById("status");
-    const gridEl = document.getElementById("grid");
-
-    const titleEl = document.getElementById("title");
-    const stateEl = document.getElementById("state");
-    const priceEl = document.getElementById("price");
-    const previewUrlEl = document.getElementById("previewUrl");
-    const fullUrlEl = document.getElementById("fullUrl");
-    const secretLocationEl = document.getElementById("secretLocation");
-
-    // ✅ NEW: photo input
-    const photoEl = document.getElementById("photo");
-
-    const postBtn = document.getElementById("postBtn");
-    const reloadBtn = document.getElementById("reloadBtn");
-
-    // Insert Auth UI just below status box
+    // ====== Auth UI ======
     const authRow = document.createElement("div");
     authRow.className = "row";
     authRow.innerHTML = `
       <button id="loginBtn" type="button">Sign in with Google</button>
-      <button id
+      <button id="logoutBtn" type="button" style="display:none">Sign out</button>
+      <span id="userInfo" class="meta"></span>
+    `;
+    statusEl.insertAdjacentElement("afterend", authRow);
+
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const userInfo = document.getElementById("userInfo");
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+
+      if (user) {
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+        userInfo.textContent = `Signed in as ${user.displayName || user.email || "User"}`;
+        postBtn.disabled = false;
+        postBtn.textContent = "Post catch";
+      } else {
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        userInfo.textContent = "Not signed in";
+        postBtn.disabled = true;
+        postBtn.textContent = "Sign in to post";
+      }
+    });
+
+    // Handle redirect sign-in result (mobile fallback)
+    try{
+      await getRedirectResult(auth);
+    }catch(err){
+      // If redirect result fails, show it but don’t crash the app
+      statusEl.textContent = "⚠️ Redirect sign-in error:\n" + (err?.message || String(err));
+    }
+
+    loginBtn.addEventListener("click", async () => {
+      statusEl.textContent = "Signing in…";
+      try {
+        await signInWithPopup(auth, provider);
+        statusEl.textContent = "✅ Signed in.";
+      } catch (e) {
+        // Popup blocked / not allowed on mobile -> redirect fallback
+        const msg = (e?.message || "").toLowerCase();
+        const code = (e?.code || "").toLowerCase();
+        const looksLikePopupBlocked =
+          code.includes("popup") || msg.includes("popup") || msg.includes("blocked") || msg.includes("closed");
+
+        if (looksLikePopupBlocked) {
+          statusEl.textContent = "Popup blocked. Switching to redirect sign-in…";
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
+        console.error(e);
+        statusEl.textContent = "❌ Sign-in failed:\n" + (e?.message || String(e));
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        statusEl.textContent = "Signed out.";
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "❌ Sign-out failed:\n" + (e?.message || String(e));
+      }
+    });
+
+    // ====== Helpers ======
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function isValidUrl(s){
+      if (!s) return true;
+      try { new URL(s); return true; } catch { return false; }
+    }
+
+    function cardHTML(p){
+      const title = p.title ?? "Untitled catch";
+      const state = p.state ?? "Unknown";
+      const priceRaw = p.price;
+      const price = (typeof priceRaw === "number") ? priceRaw.toFixed(2) : (priceRaw ?? "—");
+
+      const previewUrl = p.previewUrl ?? "";
+      const fullUrl = p.fullUrl ?? "";
+      const imageUrl = p.imageUrl ?? "";
+
+      return `
+        <div class="card">
+          ${imageUrl ? `<img class="post-img" src="${escapeHtml(imageUrl)}" alt="Catch photo" loading="lazy" />` : ""}
+          <p class="title">${escapeHtml(title)}</p>
+          <p class="meta">State: <b>${escapeHtml(state)}</b></p>
+          <p class="meta"><span class="price">$${escapeHtml(price)}</span></p>
+          ${previewUrl ? `<p class="meta"><a href="${escapeHtml(previewUrl)}" target="_blank" rel="noopener">Preview link</a></p>` : ""}
+          ${fullUrl ? `<p class="meta"><a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener">Full link</a></p>` : ""}
+        </div>
+      `;
+    }
+
+    async function uploadToCloudinary(file){
+      const maxMB = 12;
+      const sizeMB = file.size / (1024*1024);
+      if (sizeMB > maxMB) throw new Error(`Image too large (${sizeMB.toFixed(1)}MB). Choose under ${maxMB}MB.`);
+      if (!file.type.startsWith("image/")) throw new Error("Selected file is not an image.");
+
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+      const res = await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: fd });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Cloudinary upload failed (${res.status}). ${text}`);
+      }
+      return await res.json();
+    }
+
+    // ====== Load posts (won’t silently hang) ======
+    async function loadPosts(){
+      gridEl.innerHTML = "";
+      statusEl.textContent = "Loading posts…";
+
+      try{
+        let snap;
+        try{
+          const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+          snap = await getDocs(q);
+        }catch(e){
+          // If index/orderBy fails, fallback to basic collection read
+          snap = await getDocs(collection(db, "posts"));
+        }
+
+        if (!snap || snap.empty){
+          statusEl.textContent = "No posts yet. Use the Post a Catch form above.";
+          return;
+        }
+
+        let html = "";
+        snap.forEach(d => html += cardHTML(d.data()));
+        gridEl.innerHTML = html;
+        statusEl.textContent = `Loaded ${snap.size} post(s).`;
+      }catch(err){
+        console.error(err);
+        statusEl.textContent =
+          "❌ Error loading posts.\n\nMost common causes:\n- Firestore Rules blocking reads\n- Firestore not created\n- Network/adblock\n\nDetails:\n" + (err?.message || String(err));
+      }
+    }
+
+    async function postCatch(){
+      if (!currentUser) {
+        statusEl.textContent = "❌ Please sign in first.";
+        return;
+      }
+
+      const title = titleEl.value.trim();
+      const state = stateEl.value.trim();
+      const priceStr = priceEl.value.trim();
+      const previewUrl = previewUrlEl.value.trim();
+      const fullUrl = fullUrlEl.value.trim();
+      const secretLocation = secretLocationEl.value.trim();
+
+      if (!title) { statusEl.textContent = "❌ Please enter a title."; return; }
+      if (!state) { statusEl.textContent = "❌ Please select a state."; return; }
+      if (priceStr === "" || Number.isNaN(Number(priceStr))) { statusEl.textContent = "❌ Please enter a valid price."; return; }
+      if (!isValidUrl(previewUrl) || !isValidUrl(fullUrl)) { statusEl.textContent = "❌ One of your links is not a valid URL."; return; }
+
+      postBtn.disabled = true;
+
+      let imageUrl = null;
+      let imagePublicId = null;
+
+      try{
+        const file = photoEl.files && photoEl.files[0] ? photoEl.files[0] : null;
+        if (file) {
+          statusEl.textContent = "Uploading photo…";
+          const uploaded = await uploadToCloudinary(file);
+          imageUrl = uploaded.secure_url || uploaded.url || null;
+          imagePublicId = uploaded.public_id || null;
+          if (!imageUrl) throw new Error("Upload succeeded but no image URL was returned.");
+        }
+
+        statusEl.textContent = "Posting…";
+
+        await addDoc(collection(db, "posts"), {
+          title,
+          state,
+          price: Number(priceStr),
+          previewUrl: previewUrl || null,
+          fullUrl: fullUrl || null,
+
+          imageUrl: imageUrl,
+          imagePublicId: imagePublicId,
+
+          secretLocation: secretLocation || null,
+
+          userId: currentUser.uid,
+          userName: currentUser.displayName || null,
+          userEmail: currentUser.email || null,
+
+          createdAt: serverTimestamp()
+        });
+
+        titleEl.value = "";
+        stateEl.value = "";
+        priceEl.value = "";
+        previewUrlEl.value = "";
+        fullUrlEl.value = "";
+        secretLocationEl.value = "";
+        photoEl.value = "";
+
+        statusEl.textContent = "✅ Posted!";
+        await loadPosts();
+      }catch(err){
+        console.error(err);
+        statusEl.textContent =
+          "❌ Post failed.\n\nDetails:\n" + (err?.message || String(err));
+      }finally{
+        postBtn.disabled = !currentUser;
+      }
+    }
+
+    postBtn.addEventListener("click", postCatch);
+    reloadBtn.addEventListener("click", loadPosts);
+
+    // Start
+    await loadPosts();
+  </script>
+</body>
+</html>
