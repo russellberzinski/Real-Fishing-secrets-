@@ -6,13 +6,19 @@
   <title>BestFishingSecrets — Feed</title>
   <style>
     :root{
-      --bg:#0b1220; --card:#0f1a33; --text:#e8edf7; --muted:#b7c0d6; --line:#223152;
-      --accent:#60a5fa;
+      /* ====== Earth theme ====== */
+      --bg:#0b120d;        /* deep forest */
+      --card:#121b12;      /* dark moss */
+      --text:#f3f1e7;      /* warm parchment */
+      --muted:#c9c2aa;     /* dried grass */
+      --line:#2c3a2b;      /* pine shadow */
+      --accent:#7aa35a;    /* leaf green */
+      --accent2:#b08a5a;   /* bark tan */
     }
     *{box-sizing:border-box}
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:var(--text)}
 
-    /* ====== NEW: HERO COLLAGE HEADER ====== */
+    /* ====== HERO COLLAGE HEADER ====== */
     .hero-collage{
       position:relative;
       width:100%;
@@ -38,7 +44,7 @@
       position:absolute;
       inset:0;
       background:
-        radial-gradient(ellipse at center, rgba(11,18,32,.35) 0%, rgba(11,18,32,.78) 70%, rgba(11,18,32,.92) 100%);
+        radial-gradient(ellipse at center, rgba(11,18,13,.35) 0%, rgba(11,18,13,.78) 70%, rgba(11,18,13,.92) 100%);
       pointer-events:none;
     }
     .hero-text{
@@ -59,7 +65,7 @@
     }
     .hero-text p{
       margin:8px 0 0;
-      color:#c7d2fe;
+      color:rgba(243,241,231,.86);
       font-size:14px;
       text-shadow:0 8px 22px rgba(0,0,0,.55);
     }
@@ -71,16 +77,16 @@
       flex-wrap:wrap;
     }
     .hero-badge{
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(15,26,51,.55);
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(18,27,18,.55);
       padding:7px 10px;
       border-radius:999px;
       font-size:12px;
-      color:rgba(232,237,247,.9);
+      color:rgba(243,241,231,.9);
       backdrop-filter: blur(6px);
     }
 
-    /* Keep your sticky header below the collage */
+    /* Sticky header below collage */
     header{padding:18px 16px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5}
     h1{margin:0;font-size:18px}
 
@@ -88,19 +94,35 @@
     .status{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:12px;color:var(--muted);white-space:pre-wrap}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
     button,input,select,textarea{font:inherit}
+
     button{
-      border:1px solid var(--line);background:var(--card);color:var(--text);
-      padding:10px 12px;border-radius:12px;cursor:pointer
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(18,27,18,.92), rgba(11,18,13,.92));
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer
     }
-    button:hover{filter:brightness(1.1)}
+    button:hover{filter:brightness(1.08)}
     button:disabled{opacity:.55;cursor:not-allowed}
+
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
     .card{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:14px}
     .title{font-weight:800;margin:0 0 6px;font-size:16px}
     .meta{color:var(--muted);font-size:13px;margin:0 0 10px}
-    .price{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220;font-weight:800}
+
+    .price{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(176,138,90,.18);
+      font-weight:800
+    }
+
     a{color:var(--accent);text-decoration:none}
     a:hover{text-decoration:underline}
+
     .form{
       border:1px solid var(--line);
       border-radius:16px;
@@ -116,10 +138,11 @@
     }
     .fields .full{grid-column:1 / -1}
     label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+
     input,select,textarea{
       width:100%;
       border:1px solid var(--line);
-      background:#0b1220;
+      background:#0e1510;
       color:var(--text);
       padding:10px 12px;
       border-radius:12px;
@@ -128,28 +151,30 @@
     textarea{min-height:90px;resize:vertical}
     .hint{font-size:12px;color:var(--muted);margin-top:8px}
     .ok{color:#bbf7d0}
+
     .post-img{
       width:100%;
       border-radius:14px;
       border:1px solid var(--line);
       display:block;
       margin:0 0 10px 0;
-      background:#0b1220;
+      background:#0e1510;
     }
     .img-note{font-size:12px;color:var(--muted);margin-top:6px}
+
     .pill{
       border:1px solid var(--line);
-      background:#0b1220;
+      background:rgba(176,138,90,.14);
       padding:8px 10px;
       border-radius:999px;
       color:var(--muted);
       font-size:12px;
     }
 
-    /* ====== NEW: Post instructions box ====== */
+    /* Post instructions box */
     .info-box{
-      background: rgba(96,165,250,0.08);
-      border: 1px solid rgba(96,165,250,0.35);
+      background: rgba(122,163,90,0.10);
+      border: 1px solid rgba(122,163,90,0.40);
       border-radius: 14px;
       padding: 14px 16px;
       margin: 10px 0 14px;
@@ -188,17 +213,16 @@
 </head>
 <body>
 
-  <!-- ====== NEW: Collage banner (put your 8 images in /images/) ====== -->
   <section class="hero-collage" aria-label="Fishing photo collage">
     <div class="collage-grid" aria-hidden="true">
-  <img src="FB_IMG_1770908475493.jpg" alt="">
-  <img src="FB_IMG_1770908500189.jpg" alt="">
-  <img src="FB_IMG_1770908712570.jpg" alt="">
-  <img src="FB_IMG_1770908903224.jpg" alt="">
-  <img src="FB_IMG_1770909246382.jpg" alt="">
-  <img src="IMG_20250412_132452552_BURST000_COVER~2.jpg" alt="">
-  <img src="IMG_20250607_174822729_HDR.jpg" alt="">
-  <img src="IMG_20250607_184941296_HDR.jpg" alt="">
+      <img src="FB_IMG_1770908475493.jpg" alt="">
+      <img src="FB_IMG_1770908500189.jpg" alt="">
+      <img src="FB_IMG_1770908712570.jpg" alt="">
+      <img src="FB_IMG_1770908903224.jpg" alt="">
+      <img src="FB_IMG_1770909246382.jpg" alt="">
+      <img src="IMG_20250412_132452552_BURST000_COVER~2.jpg" alt="">
+      <img src="IMG_20250607_174822729_HDR.jpg" alt="">
+      <img src="IMG_20250607_184941296_HDR.jpg" alt="">
     </div>
     <div class="hero-overlay"></div>
     <div class="hero-text">
@@ -256,7 +280,6 @@
     <div class="form">
       <h2>Post a Catch</h2>
 
-      <!-- ====== NEW: Instructions for sellers + buyers ====== -->
       <div class="info-box">
         <h3>How posting works (what buyers get)</h3>
         <ul>
@@ -355,10 +378,8 @@
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-    // ====== DOM ======
     const statusEl = document.getElementById("status");
     const gridEl = document.getElementById("grid");
-
     const filterStateEl = document.getElementById("filterState");
 
     const titleEl = document.getElementById("title");
@@ -373,7 +394,6 @@
     const reloadBtn = document.getElementById("reloadBtn");
     const postHintEl = document.getElementById("postHint");
 
-    // ====== Always show real errors on-page ======
     window.addEventListener("unhandledrejection", (e) => {
       statusEl.textContent = "❌ Unhandled promise:\n" + (e.reason?.message || e.reason || e);
     });
@@ -381,12 +401,10 @@
       statusEl.textContent = "❌ JS error:\n" + (e.message || e);
     });
 
-    // ====== Cloudinary (unsigned upload) ======
     const CLOUDINARY_CLOUD_NAME = "dhuakqubc";
     const CLOUDINARY_UPLOAD_PRESET = "emiktt1b";
     const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
-    // ====== Firebase config ======
     const firebaseConfig = {
       apiKey: "AIzaSyCndtMlIb_Y_YCP1RO-ctfizRU6q1MGeHY",
       authDomain: "bestfishingsecrets-932cf.firebaseapp.com",
@@ -397,13 +415,11 @@
       measurementId: "G-Z8L28MXNEG"
     };
 
-    // ====== Init ======
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // ====== Auth UI ======
     const authRow = document.createElement("div");
     authRow.className = "row";
     authRow.innerHTML = `
@@ -441,7 +457,6 @@
       }
     });
 
-    // Handle redirect sign-in result (mobile fallback)
     try{
       await getRedirectResult(auth);
     }catch(err){
@@ -478,7 +493,6 @@
       }
     });
 
-    // ====== Helpers ======
     function escapeHtml(s){
       return String(s)
         .replaceAll("&","&amp;")
@@ -499,7 +513,6 @@
       const priceRaw = p.price;
       const price = (typeof priceRaw === "number") ? priceRaw.toFixed(2) : (priceRaw ?? "—");
 
-      // Standardized fields (supports older docs too)
       const imageUrl = p.imageUrl ?? p.previewUrl ?? "";
       const previewUrl = p.previewUrl ?? "";
       const fullUrl = p.fullUrl ?? "";
@@ -534,7 +547,6 @@
       return await res.json();
     }
 
-    // ====== Load posts (public) ======
     async function loadPosts(){
       gridEl.innerHTML = "";
       statusEl.textContent = "Loading posts…";
@@ -545,11 +557,9 @@
         let snap;
         try{
           const base = collection(db, "posts");
-
           const q = chosenState
             ? query(base, where("state", "==", chosenState), orderBy("createdAt", "desc"))
             : query(base, orderBy("createdAt", "desc"));
-
           snap = await getDocs(q);
         }catch(e){
           snap = await getDocs(collection(db, "posts"));
@@ -565,9 +575,7 @@
         let posts = [];
         snap.forEach(d => posts.push(d.data()));
 
-        if (chosenState) {
-          posts = posts.filter(p => (p.state || "").trim() === chosenState);
-        }
+        if (chosenState) posts = posts.filter(p => (p.state || "").trim() === chosenState);
 
         if (!posts.length) {
           statusEl.textContent = `No posts found for ${chosenState} yet.`;
@@ -587,7 +595,6 @@
       }
     }
 
-    // ====== Post catch (public doc + private secret doc) ======
     async function postCatch(){
       if (!currentUser) {
         statusEl.textContent = "❌ Please sign in first to post.";
@@ -598,11 +605,9 @@
       const state = stateEl.value.trim();
       const priceStr = priceEl.value.trim();
 
-      // Optional links
       const previewLinkTyped = previewUrlEl.value.trim();
       const fullLinkTyped = fullUrlEl.value.trim();
 
-      // Secret stored privately (NOT in /posts)
       const secretLocation = secretLocationEl.value.trim();
 
       if (!title) { statusEl.textContent = "❌ Please enter a title."; return; }
@@ -627,26 +632,19 @@
 
         statusEl.textContent = "Posting…";
 
-        // Standardize previewUrl/fullUrl:
-        // - if user typed links, use them
-        // - else if uploaded image exists, set both to imageUrl
-        // - else null
         const previewUrl = previewLinkTyped || imageUrl || null;
         const fullUrl = fullLinkTyped || imageUrl || null;
 
-        // 1) Create public post doc
         const postRef = await addDoc(collection(db, "posts"), {
           title,
           state,
           price: Number(priceStr),
 
-          // media
           imageUrl: imageUrl,
           imagePublicId: imagePublicId,
           previewUrl: previewUrl,
           fullUrl: fullUrl,
 
-          // secret is NOT stored here
           hasSecret: !!secretLocation,
 
           userId: currentUser.uid,
@@ -655,7 +653,6 @@
           createdAt: serverTimestamp()
         });
 
-        // 2) Store secret in a private collection with SAME doc id
         if (secretLocation) {
           await setDoc(doc(db, "postSecrets", postRef.id), {
             postId: postRef.id,
@@ -665,7 +662,6 @@
           });
         }
 
-        // Clear form
         titleEl.value = "";
         stateEl.value = "";
         priceEl.value = "";
@@ -687,7 +683,6 @@
     reloadBtn.addEventListener("click", loadPosts);
     filterStateEl.addEventListener("change", loadPosts);
 
-    // Start
     await loadPosts();
   </script>
 </body>
