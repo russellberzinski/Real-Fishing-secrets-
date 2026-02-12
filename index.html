@@ -146,6 +146,33 @@
       font-size:12px;
     }
 
+    /* ====== NEW: Post instructions box ====== */
+    .info-box{
+      background: rgba(96,165,250,0.08);
+      border: 1px solid rgba(96,165,250,0.35);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin: 10px 0 14px;
+    }
+    .info-box h3{
+      margin: 0 0 6px;
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+    .info-box ul{
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .info-box li{
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+    .info-box li:last-child{margin-bottom:0}
+
     @media (max-width:900px){
       .hero-collage{height:220px}
       .collage-grid{grid-template-columns:repeat(4,1fr)}
@@ -228,6 +255,18 @@
 
     <div class="form">
       <h2>Post a Catch</h2>
+
+      <!-- ====== NEW: Instructions for sellers + buyers ====== -->
+      <div class="info-box">
+        <h3>How posting works (what buyers get)</h3>
+        <ul>
+          <li><strong>Preview link (Free):</strong> A teaser photo or short clip anyone can view (no spot giveaway).</li>
+          <li><strong>Full link (Paid):</strong> The real content buyers are paying for — full video, exact location details, access notes, etc.</li>
+          <li><strong>Tip:</strong> If you upload a photo but leave Preview/Full link blank, we’ll use the uploaded photo as the link automatically.</li>
+          <li><strong>Secret location:</strong> Saved privately (not shown on the public feed). Only share what you’re comfortable with.</li>
+        </ul>
+      </div>
+
       <div class="fields">
         <div>
           <label for="title">Title</label>
