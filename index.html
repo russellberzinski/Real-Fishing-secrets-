@@ -239,7 +239,12 @@
   </style>
 </head>
 <body>
-
+<script>
+  var password = prompt("Enter password to access the site:");
+  if (password !== "fishing1988") {
+    document.body.innerHTML = "";
+  }
+</script>
   <section class="hero-collage" aria-label="Fishing photo collage">
     <div class="collage-grid" aria-hidden="true">
       <img src="FB_IMG_1770908475493.jpg" alt="">
