@@ -121,7 +121,15 @@
 
     <div id="grid" class="grid"></div>
   </div>
-
+<script>
+  const statusEl = document.getElementById("status");
+  function showErr(prefix, e){
+    const msg = (e && (e.message || e.reason || e.error?.message)) ? (e.message || e.reason || e.error.message) : String(e);
+    statusEl.textContent = "❌ " + prefix + ":\n" + msg;
+  }
+  window.addEventListener("error", (e) => showErr("Script error", e));
+  window.addEventListener("unhandledrejection", (e) => showErr("Promise rejection", e));
+</script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import {
