@@ -47,8 +47,8 @@
     }
     textarea{
       width:100%;
-      max-width: 720px;
-      min-height: 92px;
+      max-width:720px;
+      min-height:92px;
       border:1px solid rgba(201,194,170,.22);
       border-radius:12px;
       padding:10px 12px;
@@ -77,7 +77,7 @@
   </header>
 
   <div class="wrap">
-    <div id="status" class="card">Loading… (member v3 + cloudinary save)</div>
+    <div id="status" class="card">Loading… (member + cloudinary)</div>
 
     <div id="profileCard" class="card" style="display:none">
       <div class="row" style="justify-content:space-between">
@@ -117,10 +117,6 @@
         </div>
 
         <div id="saveMsg" class="small" style="margin-top:10px"></div>
-
-        <div class="small" style="margin-top:8px">
-          Tip: choose a photo and/or update your bio, then tap <b>Save Profile</b>.
-        </div>
       </div>
 
       <hr class="hr" />
@@ -134,27 +130,11 @@
         <div><b>Posts</b></div>
         <span id="count" class="pill">0</span>
       </div>
-      <p class="meta" style="margin:8px 0 0">Free previews only. Paid content is still locked on the member page.</p>
+      <p class="meta" style="margin:8px 0 0">Free previews only.</p>
     </div>
 
     <div id="grid" class="grid"></div>
   </div>
-
-  <!-- Always-on error reporter (shows in the status card) -->
-  <script>
-    (function(){
-      const statusEl = document.getElementById("status");
-      function showErr(prefix, e){
-        const msg =
-          (e && (e.message || e.reason || e.error?.message)) ?
-            (e.message || e.reason || e.error.message) :
-            String(e);
-        statusEl.textContent = "❌ " + prefix + ":\n" + msg;
-      }
-      window.addEventListener("error", (e) => showErr("Script error", e));
-      window.addEventListener("unhandledrejection", (e) => showErr("Promise rejection", e));
-    })();
-  </script>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -164,21 +144,10 @@
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    /******************************************************************
-     * Cloudinary (UNSIGNED upload)
-     *
-     * Put your real values here (these are NOT secrets):
-     *  - CLOUDINARY_CLOUD_NAME: your Cloudinary cloud name
-     *  - CLOUDINARY_UPLOAD_PRESET: your unsigned upload preset name
-     *
-     * In Cloudinary, lock the preset down:
-     *  - allowed formats: jpg/png/webp
-     *  - max file size: 5MB (or whatever)
-     *  - optional folder restriction
-     ******************************************************************/
-    const CLOUDINARY_CLOUD_NAME = "REPLACE_ME";
-    const CLOUDINARY_UPLOAD_PRESET = "REPLACE_ME";
-    const CLOUDINARY_FOLDER = "profilePics"; // optional; "" to skip folder
+    // Cloudinary
+    const CLOUDINARY_CLOUD_NAME = "dhuakqubc";
+    const CLOUDINARY_UPLOAD_PRESET = "emiktt1b";
+    const CLOUDINARY_FOLDER = "profilePics";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCndtMlIb_Y_YCP1RO-ctfizRU6q1MGeHY",
@@ -200,7 +169,6 @@
     const homeStateEl = document.getElementById("homeState");
     const memberUidEl = document.getElementById("memberUid");
     const bioEl = document.getElementById("bio");
-    const copyLinkBtn = document.getElementById("copyLinkBtn");
 
     const editControls = document.getElementById("editControls");
     const ownerHint = document.getElementById("ownerHint");
@@ -213,78 +181,22 @@
     const gridEl = document.getElementById("grid");
     const countEl = document.getElementById("count");
 
-    function esc(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
-    }
-    function cacheBust(url){
-      if (!url) return url;
-      return url + (url.includes("?") ? "&" : "?") + "v=" + Date.now();
-    }
-    function setSaveMsg(msg, isError=false){
-      saveMsg.textContent = msg || "";
-      saveMsg.className = "small" + (isError ? " danger" : "");
-    }
-
-    function postCardHTML(p){
-      const title = p.title ?? "Untitled catch";
-      const state = p.state ?? "Unknown";
-      const imageUrl = p.imageUrl ?? "";
-      const created = p.createdAt?.toDate ? p.createdAt.toDate() : null;
-      const createdStr = created ? created.toLocaleString() : "";
-
-      return `
-        <div class="card">
-          ${imageUrl ? `<img class="post-img" src="${esc(imageUrl)}" alt="Catch photo" loading="lazy" />` : ""}
-          <p class="title">${esc(title)}</p>
-          <p class="meta">${esc(state)}${createdStr ? " • " + esc(createdStr) : ""}</p>
-        </div>
-      `;
-    }
-
-    // --- uid required ---
     const params = new URLSearchParams(location.search);
     const uid = params.get("uid");
     if (!uid){
-      statusEl.textContent = "❌ Missing uid. Open from the feed via “View my page”.";
+      statusEl.textContent = "Missing uid.";
       throw new Error("Missing uid");
     }
 
-    // Copy link
-    async function copyProfileLink(){
-      try{
-        await navigator.clipboard.writeText(location.href);
-        copyLinkBtn.textContent = "Copied!";
-        setTimeout(() => (copyLinkBtn.textContent = "Copy profile link"), 1200);
-      }catch{
-        prompt("Copy this link:", location.href);
-      }
-    }
-    copyLinkBtn.addEventListener("click", copyProfileLink);
-
-    // Owner detection
     let currentUser = null;
     let isOwner = false;
-
-    // state for save enabling
-    let loadedProfile = null;
-    let lastSavedBio = "";
     let selectedFile = null;
-
-    function renderOwnerControls(){
-      if (isOwner){
-        editControls.style.display = "block";
-        ownerHint.textContent = "You are viewing your profile.";
-      } else {
-        editControls.style.display = "none";
-      }
-    }
+    let lastSavedBio = "";
 
     function refreshSaveBtn(){
-      if (!isOwner) { saveProfileBtn.disabled = true; return; }
+      if (!isOwner){ saveProfileBtn.disabled = true; return; }
       const bioNow = (bioInput.value || "").trim();
-      const bioChanged = bioNow !== (lastSavedBio || "");
+      const bioChanged = bioNow !== lastSavedBio;
       const hasFile = !!selectedFile;
       saveProfileBtn.disabled = !(bioChanged || hasFile);
     }
@@ -292,75 +204,42 @@
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
       isOwner = !!user && user.uid === uid;
-      renderOwnerControls();
-
-      if (isOwner && loadedProfile){
-        const b = (loadedProfile.bio && String(loadedProfile.bio).trim()) ? String(loadedProfile.bio) : "";
-        bioInput.value = b;
-        lastSavedBio = b.trim();
-        refreshSaveBtn();
-      }
+      editControls.style.display = isOwner ? "block" : "none";
+      ownerHint.textContent = isOwner ? "You are viewing your profile." : "";
     });
 
-    // file pick: preview + enable save
     photoFile.addEventListener("change", () => {
-      const f = photoFile.files?.[0] || null;
-      selectedFile = f;
-
-      if (f){
-        try{
-          avatarEl.src = URL.createObjectURL(f);
-          avatarEl.style.display = "block";
-        }catch{}
-        setSaveMsg("");
+      selectedFile = photoFile.files?.[0] || null;
+      if (selectedFile){
+        avatarEl.src = URL.createObjectURL(selectedFile);
+        avatarEl.style.display = "block";
       }
       refreshSaveBtn();
     });
 
-    // bio change
-    bioInput.addEventListener("input", () => {
-      setSaveMsg("");
-      refreshSaveBtn();
-    });
+    bioInput.addEventListener("input", refreshSaveBtn);
 
     async function uploadToCloudinary(file){
-      if (!file) return null;
-      if (!file.type.startsWith("image/")) throw new Error("That file isn't an image.");
-      const maxBytes = 5 * 1024 * 1024;
-      if (file.size > maxBytes) throw new Error("Image is too large. Try under ~5MB.");
-
-      if (!CLOUDINARY_CLOUD_NAME || CLOUDINARY_CLOUD_NAME === "REPLACE_ME") {
-        throw new Error("Cloudinary cloud name not set (CLOUDINARY_CLOUD_NAME).");
-      }
-      if (!CLOUDINARY_UPLOAD_PRESET || CLOUDINARY_UPLOAD_PRESET === "REPLACE_ME") {
-        throw new Error("Cloudinary upload preset not set (CLOUDINARY_UPLOAD_PRESET).");
-      }
-
-      const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(CLOUDINARY_CLOUD_NAME)}/image/upload`;
+      const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
       const fd = new FormData();
       fd.append("file", file);
       fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-      if (CLOUDINARY_FOLDER) fd.append("folder", CLOUDINARY_FOLDER);
-      fd.append("tags", `profile,uid_${uid}`);
+      fd.append("folder", CLOUDINARY_FOLDER);
 
-      // simple progress indicator (fetch doesn't expose upload progress)
-      saveProg.style.display = "inline-block";
-      saveProg.value = 15;
-
-      const res = await fetch(endpoint, { method: "POST", body: fd });
-      saveProg.value = 75;
-
-      if (!res.ok){
-        const txt = await res.text();
-        throw new Error("Cloudinary upload failed: " + txt.slice(0, 300));
-      }
+      const res = await fetch(endpoint, { method:"POST", body:fd });
+      if (!res.ok) throw new Error("Cloudinary upload failed");
       const data = await res.json();
-      saveProg.value = 95;
-
-      return data.secure_url || data.url || null;
+      return data.secure_url;
     }
 
-    async function upsertProfile({ photoUrl, bio }){
+    async function saveProfile(){
+      const bio = (bioInput.value || "").trim();
+      let photoUrl = null;
+
+      if (selectedFile){
+        photoUrl = await uploadToCloudinary(selectedFile);
+      }
+
       const pRef = doc(db, "profiles", uid);
       const pSnap = await getDoc(pRef);
 
@@ -369,161 +248,79 @@
           uid,
           displayName: currentUser?.displayName || "Member",
           photoUrl: photoUrl || "",
-          bio: bio || "",
-          homeState: "",
+          bio,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
-        }, { merge: true });
+        });
       } else {
-        const patch = { updatedAt: serverTimestamp() };
-        if (typeof bio === "string") patch.bio = bio;
+        const patch = { bio, updatedAt: serverTimestamp() };
         if (photoUrl) patch.photoUrl = photoUrl;
         await updateDoc(pRef, patch);
       }
+
+      if (photoUrl){
+        avatarEl.src = photoUrl;
+        avatarEl.style.display = "block";
+      }
+      bioEl.textContent = bio || "No bio yet.";
+      lastSavedBio = bio;
+      selectedFile = null;
+      photoFile.value = "";
+      refreshSaveBtn();
+      saveMsg.textContent = "Saved.";
     }
 
-    // Save Profile (uploads photo to Cloudinary if selected + saves bio)
-    saveProfileBtn.addEventListener("click", async () => {
-      if (!isOwner){
-        setSaveMsg("You must be logged in as this user to save the profile.", true);
-        return;
-      }
-
-      saveProfileBtn.disabled = true;
-      photoFile.disabled = true;
-      bioInput.disabled = true;
-      setSaveMsg("Saving…");
-      saveProg.style.display = "none";
-
-      try{
-        const bio = (bioInput.value || "").trim();
-
-        let newPhotoUrl = null;
-        if (selectedFile){
-          setSaveMsg("Uploading image…");
-          newPhotoUrl = await uploadToCloudinary(selectedFile);
-        }
-
-        setSaveMsg("Updating profile…");
-        await upsertProfile({ photoUrl: newPhotoUrl, bio });
-
-        // update UI
-        bioEl.textContent = bio ? bio : "No bio yet.";
-        lastSavedBio = bio;
-
-        if (newPhotoUrl){
-          avatarEl.src = cacheBust(newPhotoUrl);
-          avatarEl.style.display = "block";
-          loadedProfile = loadedProfile || {};
-          loadedProfile.photoUrl = newPhotoUrl;
-
-          selectedFile = null;
-          try{ photoFile.value = ""; }catch{}
-        }
-
-        loadedProfile = loadedProfile || {};
-        loadedProfile.bio = bio;
-
-        setSaveMsg("✅ Saved.");
-      } catch(e){
-        setSaveMsg("❌ " + (e?.message || String(e)), true);
-      } finally {
-        saveProg.style.display = "none";
-        photoFile.disabled = false;
-        bioInput.disabled = false;
-        refreshSaveBtn();
-      }
-    });
+    saveProfileBtn.addEventListener("click", saveProfile);
 
     async function loadProfile(){
-      statusEl.textContent = "Loading profile…";
-
       const pRef = doc(db, "profiles", uid);
       const pSnap = await getDoc(pRef);
 
       profileCard.style.display = "block";
-      copyLinkBtn.style.display = "inline-block";
       memberUidEl.textContent = `UID: ${uid}`;
 
       if (!pSnap.exists()){
-        loadedProfile = null;
         nameEl.textContent = "Member";
-        homeStateEl.textContent = "";
         bioEl.textContent = "No bio yet.";
-        avatarEl.style.display = "none";
-
-        if (isOwner){
-          bioInput.value = "";
-          lastSavedBio = "";
-          refreshSaveBtn();
-        }
         return;
       }
 
-      const p = pSnap.data() || {};
-      loadedProfile = p;
-
+      const p = pSnap.data();
       nameEl.textContent = p.displayName || "Member";
-      homeStateEl.textContent = p.homeState ? String(p.homeState) : "";
-
-      const bioText = (p.bio && String(p.bio).trim()) ? String(p.bio) : "";
-      bioEl.textContent = bioText ? bioText : "No bio yet.";
+      bioEl.textContent = p.bio || "No bio yet.";
 
       if (p.photoUrl){
-        avatarEl.src = cacheBust(p.photoUrl);
+        avatarEl.src = p.photoUrl;
         avatarEl.style.display = "block";
-      } else {
-        avatarEl.style.display = "none";
       }
 
       if (isOwner){
-        bioInput.value = bioText;
-        lastSavedBio = bioText.trim();
-        refreshSaveBtn();
+        bioInput.value = p.bio || "";
+        lastSavedBio = bioInput.value.trim();
       }
-
-      avatarEl.onerror = () => {
-        statusEl.textContent = "⚠️ Photo URL saved, but the image couldn't load.";
-        avatarEl.style.display = "none";
-      };
     }
 
     async function loadPosts(){
-      statusEl.textContent = "Loading posts…";
-      gridEl.innerHTML = "";
-
       let posts = [];
-      try{
-        let snap;
-        try{
-          snap = await getDocs(query(
-            collection(db, "posts"),
-            where("userId", "==", uid),
-            orderBy("createdAt", "desc")
-          ));
-        }catch{
-          snap = await getDocs(query(
-            collection(db, "posts"),
-            where("userId", "==", uid)
-          ));
-        }
-        snap.forEach(d => posts.push({ id: d.id, ...d.data() }));
-      }catch(e){
-        statusEl.textContent = "❌ Error loading posts:\n" + (e?.message || String(e));
-        return;
-      }
+      const snap = await getDocs(query(
+        collection(db, "posts"),
+        where("userId","==",uid)
+      ));
+      snap.forEach(d => posts.push({ id:d.id, ...d.data() }));
 
-      countEl.textContent = String(posts.length);
-      gridEl.innerHTML = posts.map(postCardHTML).join("");
+      countEl.textContent = posts.length;
+      gridEl.innerHTML = posts.map(p => `
+        <div class="card">
+          ${p.imageUrl ? `<img class="post-img" src="${p.imageUrl}">` : ""}
+          <p class="title">${p.title || "Untitled catch"}</p>
+          <p class="meta">${p.state || ""}</p>
+        </div>
+      `).join("");
     }
 
-    try{
-      await loadProfile();
-      await loadPosts();
-      statusEl.textContent = "Loaded.";
-    }catch(e){
-      statusEl.textContent = "❌ Load failed:\n" + (e?.message || String(e));
-    }
+    await loadProfile();
+    await loadPosts();
+    statusEl.textContent = "Loaded.";
   </script>
 </body>
 </html>
