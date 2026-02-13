@@ -4,7 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>BestFishingSecrets — Feed</title>
-  <style>.post{
+  <style>
+.post{
   overflow: hidden;
 }
 .post img{
@@ -31,6 +32,7 @@
 .actions button:hover{
   filter: brightness(1.08);
 }
+
     :root{
       /* ====== Earth theme ====== */
       --bg:#0b120d;        /* deep forest */
@@ -110,6 +112,64 @@
       font-size:12px;
       color:rgba(243,241,231,.9);
       backdrop-filter: blur(6px);
+    }
+
+    /* ===== Bright moving banner ===== */
+    .ticker{
+      position: relative; /* sits under collage */
+      z-index: 6;
+      background: linear-gradient(
+        90deg,
+        rgba(176,138,90,.95),
+        rgba(201,162,92,.95),
+        rgba(176,138,90,.95)
+      );
+      color: #1a1408;
+      border-bottom: 1px solid rgba(0,0,0,.25);
+      box-shadow: 0 6px 18px rgba(0,0,0,.25);
+      overflow: hidden;
+    }
+
+    .ticker__track{
+      display: flex;
+      width: max-content;
+      animation: tickerScroll 22s linear infinite;
+      padding: 10px 0;
+    }
+
+    .ticker__item{
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px;
+      color: #1a1408;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .ticker__dot{
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #1a1408;
+      opacity: .65;
+    }
+
+    @keyframes tickerScroll{
+      from{ transform: translateX(0); }
+      to{ transform: translateX(-50%); }
+    }
+
+    /* Pause when user touches/holds */
+    .ticker:active .ticker__track,
+    .ticker:hover .ticker__track{
+      animation-play-state: paused;
+    }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .ticker__track{ animation: none; }
     }
 
     /* Sticky header below collage */
@@ -337,6 +397,26 @@
       </div>
     </div>
   </section>
+
+  <!-- ===== MOVING BANNER (PASTE-IN PATCH) ===== -->
+  <div class="ticker" aria-label="Site announcements">
+    <div class="ticker__track">
+      <div class="ticker__item"><span class="ticker__dot"></span>See the catch first — unlock the exact spot only if you want it.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Post your fish, set your own price, and earn from your secret locations.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Real anglers, real catches, real locations.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Pay once, unlock the link and secret fishing spot instantly.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Turn your best fishing days into extra cash.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Members-only access to hidden waters and proven spots.</div>
+
+      <!-- duplicate for smooth loop -->
+      <div class="ticker__item"><span class="ticker__dot"></span>See the catch first — unlock the exact spot only if you want it.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Post your fish, set your own price, and earn from your secret locations.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Real anglers, real catches, real locations.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Pay once, unlock the link and secret fishing spot instantly.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Turn your best fishing days into extra cash.</div>
+      <div class="ticker__item"><span class="ticker__dot"></span>Members-only access to hidden waters and proven spots.</div>
+    </div>
+  </div>
 
   <header><h1>BestFishingSecrets — Live Feed</h1></header>
 
